@@ -1,0 +1,14 @@
+# Example Prometheus scrape config for the backend's `/metrics` endpoint
+# (see docs/api.md). Not wired into docker-compose.yml by default (keeping
+# the default stack minimal) — copy this into your own Prometheus
+# deployment, or add a `prometheus` service to docker-compose.yml that
+# mounts this file, per docs/deployment.md.
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: loony-shazam-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["backend:8080"]

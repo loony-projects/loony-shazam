@@ -1,0 +1,12 @@
+test_case,expected_song,recognized_song,recognized,score,confidence,matched_fingerprints,latency_ms
+original,Reference Track,Reference Track,True,102.63,0.659,166,684.3
+volume_-10db,Reference Track,Reference Track,True,102.63,0.659,166,783.2
+volume_-20db,Reference Track,Reference Track,True,102.63,0.659,166,640.9
+noise_light,Reference Track,Reference Track,True,73.59,0.482,143,1005.0
+noise_moderate,Reference Track,Reference Track,True,60.89,0.421,120,1006.3
+noise_heavy,Reference Track,Reference Track,True,47.51,0.312,100,987.3
+trimmed_4s,Reference Track,Reference Track,True,47.35,0.532,79,479.5
+silence_before_and_after,Reference Track,Reference Track,True,63.26,0.481,172,1094.8
+different_offset,Reference Track,Reference Track,True,215.86,0.939,253,990.9
+mp3_128k,Reference Track,Reference Track,True,102.63,0.659,166,979.5
+unrelated_white_noise,,,False,0.0,0.0,0,978.1

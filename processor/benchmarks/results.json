@@ -1,0 +1,167 @@
+{
+  "5s": {
+    "num_peaks": 48,
+    "num_fingerprints": 220,
+    "spectrogram": {
+      "p50_ms": 2.057,
+      "p95_ms": 5.283,
+      "p99_ms": 5.766,
+      "min_ms": 1.949,
+      "max_ms": 5.887
+    },
+    "peak_detection": {
+      "p50_ms": 3.315,
+      "p95_ms": 3.386,
+      "p99_ms": 3.399,
+      "min_ms": 3.298,
+      "max_ms": 3.403
+    },
+    "constellation_end_to_end": {
+      "p50_ms": 5.51,
+      "p95_ms": 5.658,
+      "p99_ms": 5.687,
+      "min_ms": 5.394,
+      "max_ms": 5.695
+    },
+    "fingerprint_generation_end_to_end": {
+      "p50_ms": 5.739,
+      "p95_ms": 5.778,
+      "p99_ms": 5.781,
+      "min_ms": 5.722,
+      "max_ms": 5.782
+    },
+    "fingerprints_per_second_generated": 38334.2
+  },
+  "10s": {
+    "num_peaks": 98,
+    "num_fingerprints": 470,
+    "spectrogram": {
+      "p50_ms": 5.429,
+      "p95_ms": 7.783,
+      "p99_ms": 8.25,
+      "min_ms": 4.789,
+      "max_ms": 8.366
+    },
+    "peak_detection": {
+      "p50_ms": 7.359,
+      "p95_ms": 7.559,
+      "p99_ms": 7.577,
+      "min_ms": 7.204,
+      "max_ms": 7.582
+    },
+    "constellation_end_to_end": {
+      "p50_ms": 12.084,
+      "p95_ms": 12.117,
+      "p99_ms": 12.123,
+      "min_ms": 12.034,
+      "max_ms": 12.125
+    },
+    "fingerprint_generation_end_to_end": {
+      "p50_ms": 12.905,
+      "p95_ms": 12.958,
+      "p99_ms": 12.958,
+      "min_ms": 12.332,
+      "max_ms": 12.958
+    },
+    "fingerprints_per_second_generated": 36420.0
+  },
+  "30s": {
+    "num_peaks": 288,
+    "num_fingerprints": 1420,
+    "spectrogram": {
+      "p50_ms": 24.196,
+      "p95_ms": 40.492,
+      "p99_ms": 41.549,
+      "min_ms": 19.973,
+      "max_ms": 41.814
+    },
+    "peak_detection": {
+      "p50_ms": 22.254,
+      "p95_ms": 22.69,
+      "p99_ms": 22.77,
+      "min_ms": 22.119,
+      "max_ms": 22.79
+    },
+    "constellation_end_to_end": {
+      "p50_ms": 37.275,
+      "p95_ms": 38.505,
+      "p99_ms": 38.654,
+      "min_ms": 35.718,
+      "max_ms": 38.692
+    },
+    "fingerprint_generation_end_to_end": {
+      "p50_ms": 38.469,
+      "p95_ms": 39.003,
+      "p99_ms": 39.095,
+      "min_ms": 38.086,
+      "max_ms": 39.118
+    },
+    "fingerprints_per_second_generated": 36912.8
+  },
+  "60s": {
+    "num_peaks": 562,
+    "num_fingerprints": 2790,
+    "spectrogram": {
+      "p50_ms": 48.459,
+      "p95_ms": 52.799,
+      "p99_ms": 53.111,
+      "min_ms": 42.111,
+      "max_ms": 53.189
+    },
+    "peak_detection": {
+      "p50_ms": 48.51,
+      "p95_ms": 49.913,
+      "p99_ms": 50.175,
+      "min_ms": 47.929,
+      "max_ms": 50.241
+    },
+    "constellation_end_to_end": {
+      "p50_ms": 107.667,
+      "p95_ms": 129.645,
+      "p99_ms": 131.429,
+      "min_ms": 89.785,
+      "max_ms": 131.876
+    },
+    "fingerprint_generation_end_to_end": {
+      "p50_ms": 91.24,
+      "p95_ms": 97.41,
+      "p99_ms": 98.309,
+      "min_ms": 89.931,
+      "max_ms": 98.534
+    },
+    "fingerprints_per_second_generated": 30578.7
+  },
+  "180s": {
+    "num_peaks": 1685,
+    "num_fingerprints": 8405,
+    "spectrogram": {
+      "p50_ms": 191.179,
+      "p95_ms": 239.05,
+      "p99_ms": 248.581,
+      "min_ms": 151.255,
+      "max_ms": 250.964
+    },
+    "peak_detection": {
+      "p50_ms": 193.484,
+      "p95_ms": 198.79,
+      "p99_ms": 199.555,
+      "min_ms": 192.742,
+      "max_ms": 199.746
+    },
+    "constellation_end_to_end": {
+      "p50_ms": 343.041,
+      "p95_ms": 364.758,
+      "p99_ms": 365.985,
+      "min_ms": 326.652,
+      "max_ms": 366.292
+    },
+    "fingerprint_generation_end_to_end": {
+      "p50_ms": 374.377,
+      "p95_ms": 400.039,
+      "p99_ms": 401.78,
+      "min_ms": 351.629,
+      "max_ms": 402.215
+    },
+    "fingerprints_per_second_generated": 22450.6
+  }
+}
