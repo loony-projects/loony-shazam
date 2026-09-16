@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only manifest fragment, merged into app/src/main/AndroidManifest.xml
+  by the Gradle manifest merger. Adds the cleartext-traffic exception for
+  10.0.2.2/localhost (see res/xml/network_security_config.xml) — release
+  builds don't include this file and keep the platform default (HTTPS
+  required everywhere).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:networkSecurityConfig="@xml/network_security_config" />
+</manifest>
