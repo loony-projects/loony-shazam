@@ -1,0 +1,43 @@
+# Environment / secrets
+.env
+*.env.local
+
+# Rust
+/backend/target/
+**/*.rs.bk
+
+# Python
+processor/.venv/
+processor/**/__pycache__/
+processor/**/*.pyc
+processor/.pytest_cache/
+processor/.ruff_cache/
+processor/.mypy_cache/
+processor/**/*.egg-info/
+processor/build/
+processor/dist/
+
+# Android / Gradle
+android/.gradle/
+android/**/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/captures/
+android/.cxx/
+
+# OS / editor
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Test/scratch audio (never commit real music — testdata/audio is
+# intentionally empty in version control, see docs/ingestion.md; anything
+# generated into it locally, e.g. via scripts/dev/generate_test_catalog.py,
+# stays untracked)
+/testdata/audio/*
+!/testdata/audio/README.md
+
+# Misc
+*.log

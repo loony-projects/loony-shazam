@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
+      POSTGRES_DB: ${POSTGRES_DB:-loony_shazam}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  processor:
+    build:
+      context: .
+      dockerfile: processor/Dockerfile
+    restart: unless-stopped
+    environment:
+      PROCESSOR_HOST: 0.0.0.0
+      PROCESSOR_PORT: 8001
+    ports:
+      - "${PROCESSOR_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8001/internal/v1/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      # Docker service names, not localhost — containers reach each other
+      # over the compose network, never the host loopback.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-devpass}@postgres:5432/${POSTGRES_DB:-loony_shazam}
+      REDIS_URL: redis://redis:6379
+      PROCESSOR_URL: http://processor:8001
+      API_HOST: 0.0.0.0
+      API_PORT: 8080
+      RUST_LOG: ${RUST_LOG:-info,sqlx=warn}
+      MAX_AUDIO_BYTES: ${MAX_AUDIO_BYTES:-20971520}
+      MAX_AUDIO_DURATION_SECONDS: ${MAX_AUDIO_DURATION_SECONDS:-15}
+      FINGERPRINT_ALGORITHM_VERSION: ${FINGERPRINT_ALGORITHM_VERSION:-1}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?set ADMIN_API_KEY in .env}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      processor:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:
