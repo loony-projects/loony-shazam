@@ -39,5 +39,9 @@ android/.cxx/
 /testdata/audio/*
 !/testdata/audio/README.md
 
+# Local (non-Docker) run state: pid files and logs from
+# scripts/dev/run_local.sh
+/.run/
+
 # Misc
 *.log

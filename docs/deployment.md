@@ -17,6 +17,83 @@ Android points at the backend via `http://10.0.2.2:8080/` from an emulator
 (the standard alias for the host machine's localhost) — see
 [android.md](android.md).
 
+## Running without Docker
+
+Nothing in this system actually requires Docker — it's a convenience for
+bundling Postgres/Redis/processor/backend together, not a dependency any
+of them have on each other. The processor is a plain Python/FastAPI
+process, the backend is a plain Rust binary, and both just need a
+reachable Postgres (and optionally Redis) via `DATABASE_URL`/`REDIS_URL`.
+
+```bash
+cp .env.example .env
+# set DATABASE_URL to a Postgres you already have running (a system
+# package install, a VM, a managed instance — anything), REDIS_URL if you
+# have one (optional — the app runs fine without it), and a real
+# ADMIN_API_KEY
+
+make dev-local        # scripts/dev/run_local.sh
+```
+
+`scripts/dev/run_local.sh`:
+1. Checks `DATABASE_URL` is reachable (`psql ... -c "SELECT 1"`) and warns
+   (but doesn't fail) if `REDIS_URL` is set but unreachable.
+2. Creates `processor/.venv` and installs dependencies if this is the
+   first run.
+3. Starts the processor (`music-fingerprint serve`) and waits for
+   `/internal/v1/health`.
+4. Builds the backend release binary if needed and starts it — which
+   applies schema migrations automatically and idempotently
+   (`sqlx::migrate!`, tracked in `_sqlx_migrations`) — and waits for
+   `/ready`.
+
+Both processes run in the background with PID files and logs under
+`.run/` (gitignored). Stop them with `make dev-local-stop`; tail their
+output with `make dev-local-logs`.
+
+This intentionally does **not** try to install or start Postgres/Redis
+themselves — unlike `docker compose up`, which containerizes fresh
+instances, this path assumes you're pointing at something that already
+exists. If `DATABASE_URL` isn't reachable, the script fails fast with a
+clear message rather than doing anything destructive.
+
+### Adopting a schema that was applied another way
+
+The backend's migration tracking (`_sqlx_migrations`) expects to be the
+one that ran `CREATE TABLE songs`, etc. If you've already applied
+`database/migrations/*.sql` by hand (e.g. via `make migrate`, or your own
+tooling) against a database that doesn't have `_sqlx_migrations` yet, the
+backend's next startup will try to re-run migration 1 and fail with
+`relation "songs" already exists`. To adopt that schema instead of
+recreating it: compute the checksums the embedded migrator expects and
+back-fill `_sqlx_migrations` with them, once:
+
+```bash
+# Prints "<version> <description> <sqlx-checksum-hex>" per migration
+cat > /tmp/print_checksums.rs <<'RS'
+fn main() {
+    let migrator = sqlx::migrate!("../database/migrations");
+    for m in migrator.iter() {
+        let hex: String = m.checksum.iter().map(|b| format!("{b:02x}")).collect();
+        println!("{}\t{}\t{}", m.version, m.description, hex);
+    }
+}
+RS
+cp /tmp/print_checksums.rs backend/examples/print_migration_checksums.rs
+(cd backend && cargo run --release --example print_migration_checksums)
+rm backend/examples/print_migration_checksums.rs
+```
+
+Then, for each printed row, insert it into `_sqlx_migrations` (creating
+the table first if needed — see the standard sqlx schema: `version
+BIGINT PRIMARY KEY, description TEXT NOT NULL, installed_on TIMESTAMPTZ
+NOT NULL DEFAULT now(), success BOOLEAN NOT NULL, checksum BYTEA NOT
+NULL, execution_time BIGINT NOT NULL`), with `success = true` and
+`checksum = decode('<hex>', 'hex')`. This is a one-time bookkeeping fix,
+not something `run_local.sh` does automatically — it only applies when
+you've deliberately applied the schema outside the backend's own startup
+path.
+
 ## Production
 
 This repository ships a working local/dev deployment; the following is

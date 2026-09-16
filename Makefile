@@ -1,5 +1,5 @@
-.PHONY: dev dev-down test test-backend test-processor lint lint-backend lint-processor \
-	ingest benchmark e2e fmt migrate
+.PHONY: dev dev-down dev-local dev-local-stop dev-local-logs test test-backend test-processor \
+	lint lint-backend lint-processor ingest benchmark e2e fmt migrate
 
 # Start the full backend stack (postgres, redis, processor, backend) via Docker Compose.
 dev:
@@ -7,6 +7,18 @@ dev:
 
 dev-down:
 	docker compose down
+
+# Start processor + backend as plain local processes, no Docker at all.
+# Requires Postgres (and optionally Redis) already reachable — see .env and
+# docs/deployment.md "Running without Docker".
+dev-local:
+	scripts/dev/run_local.sh
+
+dev-local-stop:
+	scripts/dev/stop_local.sh
+
+dev-local-logs:
+	tail -f .run/*.log
 
 # Apply database migrations against a running local Postgres. The backend
 # also applies them automatically on every startup (see

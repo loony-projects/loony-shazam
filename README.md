@@ -30,14 +30,22 @@ algorithm works, including the parameter-tuning data behind the defaults.
 
 ## 2. Requirements
 
-- Docker + Docker Compose (v2, the `docker compose` subcommand)
-- Rust (stable, 2021 edition) + `cargo` — for local backend development
-- Python 3.11+ — for the processor / ingestion CLI
+Docker is convenient but **not required** — see "Running without Docker"
+below for the alternative.
+
+- Rust (stable, 2021 edition) + `cargo` — the backend
+- Python 3.11+ — the processor / ingestion CLI
+- PostgreSQL (any 14+ instance you can reach — Docker, a system package, a
+  VM, a managed service) and, optionally, Redis
 - Android Studio / JDK 17 + Android SDK (compileSdk 35) — for the Android app
-- `psql` client (optional, handy for inspecting the database)
+- `psql` client (handy for inspecting the database; required by the
+  no-Docker path's readiness check)
+- Docker + Docker Compose (v2, the `docker compose` subcommand) — only if
+  you want Postgres/Redis/processor/backend containerized
 
 ## 3. Quick start
 
+**With Docker:**
 ```bash
 cp .env.example .env
 # edit .env and set a real ADMIN_API_KEY
@@ -45,8 +53,22 @@ cp .env.example .env
 make dev          # docker compose up --build: postgres, redis, processor, backend
 ```
 
-Wait for `curl http://localhost:8080/ready` to report `"status":"ready"`,
-then in another terminal:
+**Without Docker** (uses Postgres/Redis you already have running):
+```bash
+cp .env.example .env
+# edit .env: set DATABASE_URL to a Postgres you can already reach,
+# REDIS_URL if you have one (optional), and a real ADMIN_API_KEY
+
+make dev-local     # builds + starts processor and backend as local processes
+# make dev-local-stop to stop them, make dev-local-logs to tail their output
+```
+`make dev-local` applies schema migrations automatically (the backend does
+this on every startup, idempotently) — no separate migration step needed
+for a fresh database. See [docs/deployment.md](docs/deployment.md)
+"Running without Docker" for details and troubleshooting.
+
+Either way, wait for `curl http://localhost:8080/ready` to report
+`"status":"ready"`, then in another terminal:
 
 ```bash
 # Generate a small synthetic test catalog (no copyrighted music — see
@@ -66,10 +88,17 @@ command: `make e2e`.
 
 ## 4. Running each component
 
+`make dev-local` (see Quick Start) does the processor + backend steps
+below for you in one command. This section is for running things
+individually — useful for iterating on one component, or if you'd rather
+not use the wrapper script at all.
+
 ### PostgreSQL / Redis
-`docker compose up postgres redis` — or point `DATABASE_URL`/`REDIS_URL` at
-your own instances. Migrations in `database/migrations` are applied
-automatically by the backend on startup.
+`docker compose up postgres redis` — or just point `DATABASE_URL`/
+`REDIS_URL` at instances you already have running (a system package
+install, a VM, a managed service). Nothing else in this repo assumes
+Postgres/Redis are containerized. Migrations in `database/migrations` are
+applied automatically by the backend on startup either way.
 
 ### Python processor
 ```bash
@@ -160,6 +189,17 @@ hardcoded, nothing is committed as a real secret.
   2024 dependencies); update your toolchain (`rustup update stable`).
 - **Android emulator can't reach the backend**: use `10.0.2.2`, not
   `localhost`, from inside the emulator.
+- **`make dev-local` fails at "could not connect using DATABASE_URL"**:
+  Postgres isn't reachable at the host/port/credentials in `.env` — the
+  script doesn't start Postgres for you (unlike `make dev`, which
+  containerizes it). Start your own Postgres first, or use `make dev`.
+- **`make dev-local` schema errors on a database that already has these
+  tables** (e.g. you applied `database/migrations/*.sql` by hand first):
+  the backend tracks applied migrations in `_sqlx_migrations` and expects
+  to have been the one to create them — either let it manage the schema
+  from an empty database, or see `docs/deployment.md` "Running without
+  Docker" for how to back-fill that tracking table for a schema applied
+  another way.
 
 ## Documentation index
 
