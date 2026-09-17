@@ -41,7 +41,7 @@ Prometheus text-format exposition (`requests_total`,
 ### `POST /api/v1/recognitions/audio`
 The primary recognition path. `multipart/form-data` with one field named
 `audio` (any format the processor can decode — WAV/FLAC/MP3 directly via
-libsndfile, AAC/M4A via an `ffmpeg` fallback). Capped at `MAX_AUDIO_BYTES`
+libsndfile, anything else via an `ffmpeg` fallback that probes content rather than trusting the extension). Capped at `MAX_AUDIO_BYTES`
 (default 20MB) and `MAX_AUDIO_DURATION_SECONDS` (default 15s, enforced by
 the processor using the value the backend passes through).
 

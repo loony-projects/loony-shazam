@@ -55,7 +55,8 @@ impl From<RecognitionOutcome> for RecognitionResponse {
 
 /// `POST /api/v1/recognitions/audio` — the primary path. Accepts a
 /// multipart upload with a single `audio` field (any format the processor
-/// can decode: WAV/FLAC/MP3 directly, AAC/M4A via ffmpeg fallback).
+/// can decode: WAV/FLAC/MP3 directly, anything else via an ffmpeg
+/// fallback that probes content rather than trusting the file's extension).
 pub async fn recognize_audio(
     State(state): State<AppState>,
     mut multipart: Multipart,

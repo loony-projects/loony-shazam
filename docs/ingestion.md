@@ -36,7 +36,11 @@ migrated Postgres instance.
    the ingestion tool should recognize that).
 3. **Decode + validate**: same canonical decode path as the query path
    (mono, resampled to 11025Hz, peak-normalized) via `soundfile`, with an
-   `ffmpeg` fallback for AAC/M4A. Corrupted files, zero-length audio, and
+   `ffmpeg` fallback whenever `soundfile` can't parse it — regardless of
+   the file's extension, since extensions are routinely wrong in the wild
+   (e.g. AAC/M4A content saved with a `.mp3` extension by some download
+   tools; `ffmpeg` probes actual content, not the name, to pick a
+   demuxer). Corrupted files, zero-length audio, and genuinely
    unsupported codecs raise `AudioValidationError` and are recorded as
    `failed` — **one bad file never aborts the whole run**.
 4. **Metadata**: best-effort ID3/FLAC/MP4 tag read via `mutagen`
@@ -77,12 +81,11 @@ fingerprint rows through JSON-over-HTTP would be needlessly slow.)
 
 | Format | How |
 |---|---|
-| WAV, FLAC, MP3 | `soundfile` (libsndfile) — direct, no shell-out |
-| AAC, M4A | `ffmpeg` subprocess fallback, invoked with an explicit argv list (never a shell string — no command-injection surface even though the input is untrusted) |
-| OGG | `soundfile` |
+| WAV, FLAC, MP3, OGG | `soundfile` (libsndfile) — direct, no shell-out |
+| AAC, M4A, and anything else `soundfile` rejects | `ffmpeg` subprocess fallback (content-probed, not extension-gated), invoked with an explicit argv list — never a shell string, no command-injection surface even though the input is untrusted |
 
-Anything else fails with a clear `AudioDecodeError` rather than silently
-skipping or crashing.
+Anything `ffmpeg` also can't make sense of fails with a clear
+`AudioDecodeError` rather than silently skipping or crashing.
 
 ## Safety
 

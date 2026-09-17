@@ -26,11 +26,15 @@ from music_fingerprint.validation import (
     validate_payload_size,
 )
 
-# Formats libsndfile (via soundfile) decodes directly. Anything else falls
-# back to ffmpeg (see `_decode_with_ffmpeg`), invoked as an argv list —
-# never through a shell — so there is no command-injection surface even
-# though the input path/bytes are untrusted.
-_FFMPEG_FALLBACK_EXTENSIONS = {".m4a", ".aac", ".mp4"}
+# Anything libsndfile can't decode falls back to ffmpeg (see
+# `_decode_with_ffmpeg`), invoked as an argv list — never through a shell —
+# so there is no command-injection surface even though the input path/bytes
+# are untrusted. The fallback is NOT gated on the file's extension: real-
+# world files are routinely mislabeled (a ".mp3" that's actually M4A/AAC
+# content is common from some download tools) and we explicitly never
+# trust a filename extension for anything (see product spec "AUDIO
+# SECURITY"). ffmpeg probes actual content bytes to pick a demuxer, so it
+# doesn't need the extension to be correct either.
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,7 +78,8 @@ def _decode_with_soundfile(data: bytes) -> tuple[np.ndarray, int]:
 
 
 def _decode_with_ffmpeg(data: bytes, suffix: str) -> tuple[np.ndarray, int]:
-    """Fallback decoder for formats libsndfile can't read (AAC/M4A).
+    """Fallback decoder for anything libsndfile can't read (e.g. AAC/M4A
+    content, including files mislabeled with an unrelated extension).
 
     Invoked with an explicit argv list (no shell=True, no string
     interpolation of any user-controlled value) to avoid any command
@@ -131,12 +136,9 @@ def decode_audio_bytes(
         samples, orig_sr = _decode_with_soundfile(data)
     except (sf.LibsndfileError, RuntimeError, ValueError) as exc:
         suffix = Path(filename_hint or "").suffix.lower()
-        if suffix in _FFMPEG_FALLBACK_EXTENSIONS or suffix == "":
-            try:
-                samples, orig_sr = _decode_with_ffmpeg(data, suffix or ".m4a")
-            except AudioDecodeError:
-                raise AudioDecodeError(str(exc)) from exc
-        else:
+        try:
+            samples, orig_sr = _decode_with_ffmpeg(data, suffix or ".bin")
+        except AudioDecodeError:
             raise AudioDecodeError(str(exc)) from exc
 
     if samples.size == 0:
