@@ -30,13 +30,22 @@ def main() -> None:
     required=True,
     help="Postgres connection string (or set DATABASE_URL).",
 )
-def ingest(music_dir: Path, database_url: str) -> None:
+@click.option(
+    "--artwork-dir",
+    envvar="ARTWORK_DIR",
+    default=None,
+    help="Directory to write extracted cover art to (default: ./data/artwork). "
+    "Must be the same directory the backend serves at GET /artwork/*.",
+)
+def ingest(music_dir: Path, database_url: str, artwork_dir: str | None) -> None:
     """Ingest a directory of licensed/local audio into the catalog.
 
     Idempotent: re-running over the same directory skips files already
-    recorded in `ingested_sources` (identified by SHA-256).
+    recorded in `ingested_sources` (identified by SHA-256). Embedded cover
+    art (ID3 APIC / MP4 covr / FLAC pictures) is extracted automatically
+    where present.
     """
-    with Ingestor(db_url=database_url) as ingestor:
+    with Ingestor(db_url=database_url, artwork_dir=artwork_dir) as ingestor:
         outcomes = ingestor.ingest_directory(music_dir)
 
     ingested = [o for o in outcomes if o.status == "ingested"]
@@ -52,6 +61,26 @@ def ingest(music_dir: Path, database_url: str) -> None:
 
     if failed:
         raise SystemExit(1)
+
+
+@main.command("backfill-artwork")
+@click.argument("music_dir", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--database-url", envvar="DATABASE_URL", required=True)
+@click.option("--artwork-dir", envvar="ARTWORK_DIR", default=None)
+def backfill_artwork(music_dir: Path, database_url: str, artwork_dir: str | None) -> None:
+    """Fill in artwork_url for songs ingested before artwork extraction
+    existed, without touching their fingerprints. Matches files to
+    already-ingested songs purely by content hash (same identity used by
+    `ingest`), so it's safe to point this at the same directory (or a
+    superset of it) repeatedly.
+    """
+    with Ingestor(db_url=database_url, artwork_dir=artwork_dir) as ingestor:
+        counts = ingestor.backfill_artwork_directory(music_dir)
+
+    click.echo(f"Updated:                 {counts.get('updated', 0)}")
+    click.echo(f"Already had artwork:     {counts.get('already_has_artwork', 0)}")
+    click.echo(f"No embedded artwork:     {counts.get('no_artwork', 0)}")
+    click.echo(f"Not a previously-ingested file: {counts.get('not_previously_ingested', 0)}")
 
 
 @main.command()
