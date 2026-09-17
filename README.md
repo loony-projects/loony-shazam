@@ -207,6 +207,7 @@ hardcoded, nothing is committed as a real secret.
 
 ## Documentation index
 
+- [docs/how-song-recognition-works.md](docs/how-song-recognition-works.md) — start here: the complete, from-first-principles explanation of how recognition actually works, start to finish
 - [docs/architecture.md](docs/architecture.md) — system design, data flow, tradeoffs
 - [docs/fingerprinting.md](docs/fingerprinting.md) — the algorithm, in depth
 - [docs/database.md](docs/database.md) — schema and scaling path
