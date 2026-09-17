@@ -156,16 +156,76 @@ it clear its own prior rows before each run (see `EVAL_ARTIST` /
 `--database-url` cleanup in the script). Documented here because it's a
 better illustration of "measure, don't assume" than a clean run would be.
 
+## Real-world acoustic conditions: room reverb is the dominant weakness
+
+Every result above used clean-cut digital clips or additive noise —
+neither tests the *actual* Shazam use case: a song playing out loud,
+picked up by a phone microphone across a room. `scripts/benchmarking/evaluate_realistic_conditions.py`
+closes that gap by simulating the acoustic chain a real query goes
+through (room reverberation → speaker/mic frequency response → ambient
+noise) and running it against 5 real songs from a real personal library
+(not synthetic tones), through the live backend, over real HTTP.
+
+| Condition | Recognized | What it isolates |
+|---|---|---|
+| Clean clip (no distortion) | **5/5** | Baseline |
+| Speaker/mic frequency response only (bandpass ~150Hz–7kHz + soft clipping, no reverb) | **5/5** | Bass/treble rolloff and mild distortion alone |
+| Room reverb only (no noise, no bandpass) | **1/5** (and that one recognition at 3.1% confidence — essentially borderline) | Reverberation alone |
+| Full realistic playback (reverb + speaker/mic response + noise, SNR 15dB) | **1/5** | The closest approximation to a real "phone held up to a speaker" query |
+| Full realistic playback, heavier noise (SNR 5dB) | **0/5** | Same, with more ambient noise |
+
+The pattern is unambiguous: **reverb, not noise or frequency-response
+coloring, is what actually breaks recognition.** A query degraded by
+bandpass filtering and mild clipping alone still recognizes as reliably
+as a clean clip; add reverb and recognition collapses even with an
+otherwise-mild 15dB noise floor on top.
+
+### Why, and why it isn't a quick fix
+
+Measuring directly (comparing the fingerprint hash sets of a clean clip
+against its reverberant version) shows the mechanism isn't what you'd
+guess: reverb does **not** meaningfully change how many peaks get
+detected (562 clean vs. 600 reverberant, for one representative 10s
+clip). What it changes is **which** time/frequency points are locally
+dominant — reverb's decaying tail adds correlated energy near real
+peaks, occasionally outcompeting the true attack transient for "loudest
+in its neighborhood," which cascades into a different landmark hash even
+when a peak survives at roughly the same location. The result: only
+**4.3% of fingerprint hashes overlap** between the clean and reverberant
+versions of the same clip — far below what temporal voting needs to
+clear the matching thresholds.
+
+This was tested, not assumed: a sweep of `peak_neighborhood_time` (15 →
+45 frames) and `peak_min_db_above_local_mean` (10 → 18dB) against the
+same clip found hash overlap stuck in a narrow 3.7–5.2% band regardless —
+**no parameter tune found in this sweep meaningfully helps**, because the
+problem isn't peak density or threshold sensitivity (the levers those
+parameters control), it's that reverb is *signal-correlated* distortion,
+unlike the additive white noise the peak detector was originally tuned
+against (see [fingerprinting.md](fingerprinting.md) and the "5 real bugs"
+section of [how-song-recognition-works.md](how-song-recognition-works.md)).
+A real fix would need dereverberation as its own preprocessing stage
+(e.g. spectral subtraction of an estimated late-reverb tail before peak
+detection) — a genuinely new pipeline stage, not a threshold nudge, and
+explicitly **not implemented** here. This is documented as a known,
+measured limitation rather than silently left untested or, worse, papered
+over with a parameter change that only looked like it helped on one clip.
+
+Reproduce: `python3 scripts/benchmarking/evaluate_realistic_conditions.py
+--audio-dir ~/Music/YourCatalog --backend-url http://localhost:8080`.
+Raw data: `testdata/expected/realistic_conditions_report.csv`.
+
 ## Known limitations of these measurements
 
 - Single-machine, single-run measurements, not averaged across hardware or
   repeated over days — treat absolute numbers as indicative, not SLA-grade.
-- Synthetic audio only (see [ingestion.md](ingestion.md) for why — no
-  copyrighted music in this repo). Real-world recordings (phone mic
-  through room acoustics, compressed streaming audio, etc.) will show
-  different — likely somewhat lower — recognition scores than the clean
-  synthetic signals used here, though the *mechanism* being validated
-  (temporal consistency survives noise/compression/trimming) is the same.
+- The fingerprint extraction and matching-engine benchmarks above use
+  synthetic audio (see [ingestion.md](ingestion.md) for why the repo has
+  no copyrighted music). The end-to-end evaluation harness does too. The
+  "real-world acoustic conditions" section above uses real audio from a
+  real personal library and is where the actual accuracy-under-realistic-
+  distortion numbers live — see that section rather than assuming a
+  synthetic-only number generalizes.
 - `score`/`confidence` are ranking heuristics, not calibrated
   probabilities (see [fingerprinting.md](fingerprinting.md) §9) — no
   calibration study against a labeled real-world query corpus has been

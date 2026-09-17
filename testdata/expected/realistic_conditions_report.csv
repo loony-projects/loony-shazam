@@ -1,0 +1,26 @@
+file,condition,recognized,recognized_title,score,confidence,matched_fingerprints,query_fingerprints,latency_ms
+Nisukoni Geet.mp3,clean_clip,True,Nisukoni Geet,413.16,0.409,1581,2791,90.0
+Nisukoni Geet.mp3,room_reverb_only,False,,0.0,0.0,0,2979,104.0
+Nisukoni Geet.mp3,speaker_mic_response_only,True,Nisukoni Geet,172.56,0.266,1199,2597,83.2
+Nisukoni Geet.mp3,realistic_playback_snr15db,False,,0.0,0.0,0,2683,129.6
+Nisukoni Geet.mp3,realistic_playback_snr5db,False,,0.0,0.0,0,1333,77.0
+Popiya Tora.mp3,clean_clip,True,Popiya Tora,455.88,0.426,901,1855,101.9
+Popiya Tora.mp3,room_reverb_only,False,,0.0,0.0,0,2490,91.0
+Popiya Tora.mp3,speaker_mic_response_only,True,Popiya Tora,277.55,0.321,654,1706,68.0
+Popiya Tora.mp3,realistic_playback_snr15db,True,Popiya Tora,8.19,0.031,227,1697,65.0
+Popiya Tora.mp3,realistic_playback_snr5db,False,,0.0,0.0,0,867,58.1
+Tetseo Sisters - O Soneko (Official Music Video) with English Subtitles.mp3,clean_clip,True,Tetseo Sisters - O Soneko (Official Music Video) with English Subtitles,789.4,0.387,1215,2981,80.4
+Tetseo Sisters - O Soneko (Official Music Video) with English Subtitles.mp3,room_reverb_only,True,Tetseo Sisters - O Soneko (Official Music Video) with English Subtitles,20.94,0.031,313,2975,76.7
+Tetseo Sisters - O Soneko (Official Music Video) with English Subtitles.mp3,speaker_mic_response_only,True,Tetseo Sisters - O Soneko (Official Music Video) with English Subtitles,835.77,0.398,1230,2983,94.4
+Tetseo Sisters - O Soneko (Official Music Video) with English Subtitles.mp3,realistic_playback_snr15db,False,,0.0,0.0,0,2884,69.7
+Tetseo Sisters - O Soneko (Official Music Video) with English Subtitles.mp3,realistic_playback_snr5db,False,,0.0,0.0,0,1392,61.2
+Prarthona.mp3,clean_clip,True,Prarthona,155.86,0.458,609,1240,81.7
+Prarthona.mp3,room_reverb_only,False,,0.0,0.0,0,1990,72.2
+Prarthona.mp3,speaker_mic_response_only,True,Prarthona,171.3,0.356,504,1142,62.7
+Prarthona.mp3,realistic_playback_snr15db,False,,0.0,0.0,0,1105,56.4
+Prarthona.mp3,realistic_playback_snr5db,False,,0.0,0.0,0,658,64.5
+Parijat.mp3,clean_clip,True,Parijat,619.46,0.335,1163,2970,86.4
+Parijat.mp3,room_reverb_only,False,,0.0,0.0,0,2975,86.4
+Parijat.mp3,speaker_mic_response_only,True,Parijat,432.23,0.271,1050,2970,82.8
+Parijat.mp3,realistic_playback_snr15db,False,,0.0,0.0,0,2276,72.2
+Parijat.mp3,realistic_playback_snr5db,False,,0.0,0.0,0,1092,68.8

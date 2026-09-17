@@ -906,6 +906,20 @@ done. The public API deliberately never manufactures a number like
 "99.9% confidence" without that backing — it reports the heuristic as-is
 and documents its actual meaning, here and in `docs/fingerprinting.md`.
 
+**Update — this has since been partially measured, not just flagged as
+missing.** `scripts/benchmarking/evaluate_realistic_conditions.py`
+(`docs/performance.md` "Real-world acoustic conditions") ran real songs
+through a simulated real-world acoustic chain (room reverb, speaker/mic
+frequency response, ambient noise) against the live backend. The
+headline finding: **room reverb, not noise or frequency-response
+coloring, is what actually breaks recognition** — a query degraded by
+bandpass filtering and mild clipping alone recognized as reliably as a
+clean clip (5/5), while the same clip with reverb added recognized in
+only 1/5 cases, and that one case at borderline confidence. This still
+isn't a full statistical calibration study (that remains future work),
+but it's real, measured evidence about *where* this system's real-world
+accuracy actually degrades, rather than a purely theoretical caveat.
+
 ---
 
 ## Part XVII — Running it yourself

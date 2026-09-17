@@ -167,7 +167,16 @@ def main() -> None:
         variants = make_variants(reference, SAMPLE_RATE)
 
         rows = []
-        header = ["test_case", "expected_song", "recognized_song", "recognized", "score", "confidence", "matched_fingerprints", "latency_ms"]
+        header = [
+            "test_case",
+            "expected_song",
+            "recognized_song",
+            "recognized",
+            "score",
+            "confidence",
+            "matched_fingerprints",
+            "latency_ms",
+        ]
         print(" | ".join(f"{h:<20}" for h in header))
         print("-" * 150)
 
