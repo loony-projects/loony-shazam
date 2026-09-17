@@ -1,5 +1,5 @@
 .PHONY: dev dev-down dev-local dev-local-stop dev-local-logs test test-backend test-processor \
-	lint lint-backend lint-processor ingest benchmark e2e fmt migrate \
+	lint lint-backend lint-processor ingest backfill-artwork benchmark e2e fmt migrate \
 	install-android uninstall-android
 
 # Start the full backend stack (postgres, redis, processor, backend) via Docker Compose.
@@ -53,10 +53,21 @@ fmt:
 	cd processor && . .venv/bin/activate && ruff format .
 
 # Usage: make ingest MUSIC_DIR=./testdata/audio
+# ARTWORK_DIR defaults to an absolute path at the repo root so it matches
+# whatever `make dev-local` / `make dev` set up for the backend to serve
+# from, regardless of which directory this runs from.
 ingest:
 	cd processor && . .venv/bin/activate && \
 		DATABASE_URL=$${DATABASE_URL:-postgresql://postgres:devpass@localhost:5432/loony_shazam} \
+		ARTWORK_DIR=$${ARTWORK_DIR:-$(CURDIR)/data/artwork} \
 		music-fingerprint ingest $(MUSIC_DIR)
+
+# Usage: make backfill-artwork MUSIC_DIR=./testdata/audio
+backfill-artwork:
+	cd processor && . .venv/bin/activate && \
+		DATABASE_URL=$${DATABASE_URL:-postgresql://postgres:devpass@localhost:5432/loony_shazam} \
+		ARTWORK_DIR=$${ARTWORK_DIR:-$(CURDIR)/data/artwork} \
+		music-fingerprint backfill-artwork $(MUSIC_DIR)
 
 benchmark:
 	cd processor && . .venv/bin/activate && python benchmarks/run_benchmarks.py

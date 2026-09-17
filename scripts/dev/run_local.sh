@@ -32,6 +32,20 @@ PROCESSOR_PORT="${PROCESSOR_PORT:-8001}"
 API_PORT="${API_PORT:-8080}"
 PROCESSOR_URL="${PROCESSOR_URL:-http://localhost:$PROCESSOR_PORT}"
 
+# Resolve to an absolute path and export it: the processor and backend are
+# launched from different working directories below (processor/, backend/),
+# so a relative ARTWORK_DIR (e.g. the "./data/artwork" default in
+# .env.example) would silently resolve to two DIFFERENT directories — one
+# under each subdirectory — if left as-is. Both processes must agree on
+# literally the same directory (the processor writes cover art into it
+# during ingestion; the backend serves it back out at GET /artwork/*).
+ARTWORK_DIR="${ARTWORK_DIR:-./data/artwork}"
+if [[ "$ARTWORK_DIR" != /* ]]; then
+  ARTWORK_DIR="$ROOT_DIR/${ARTWORK_DIR#./}"
+fi
+export ARTWORK_DIR
+mkdir -p "$ARTWORK_DIR"
+
 RUN_DIR="$ROOT_DIR/.run"
 mkdir -p "$RUN_DIR"
 
@@ -117,6 +131,8 @@ echo ""
 echo "==> Running (no Docker):"
 echo "    processor: $PROCESSOR_URL (pid $(cat "$RUN_DIR/processor.pid"))"
 echo "    backend:   http://localhost:$API_PORT (pid $(cat "$RUN_DIR/backend.pid"))"
+echo "    artwork:   $ARTWORK_DIR (pass the same ARTWORK_DIR to 'music-fingerprint ingest'"
+echo "               if you run it manually instead of via 'make ingest')"
 echo ""
 echo "Stop with:  scripts/dev/stop_local.sh"
 echo "Logs:       tail -f .run/*.log"

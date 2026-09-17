@@ -35,8 +35,14 @@ services:
     environment:
       PROCESSOR_HOST: 0.0.0.0
       PROCESSOR_PORT: 8001
+      # Must match the backend's ARTWORK_DIR below — both mount the same
+      # named volume at the same in-container path so cover art written
+      # here during ingestion is immediately servable by the backend.
+      ARTWORK_DIR: /data/artwork
     ports:
       - "${PROCESSOR_PORT:-8001}:8001"
+    volumes:
+      - artwork_data:/data/artwork
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8001/internal/v1/health"]
       interval: 5s
@@ -62,8 +68,11 @@ services:
       MAX_AUDIO_DURATION_SECONDS: ${MAX_AUDIO_DURATION_SECONDS:-15}
       FINGERPRINT_ALGORITHM_VERSION: ${FINGERPRINT_ALGORITHM_VERSION:-1}
       ADMIN_API_KEY: ${ADMIN_API_KEY:?set ADMIN_API_KEY in .env}
+      ARTWORK_DIR: /data/artwork
     ports:
       - "${API_PORT:-8080}:8080"
+    volumes:
+      - artwork_data:/data/artwork
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,3 +87,4 @@ services:
 
 volumes:
   postgres_data:
+  artwork_data:

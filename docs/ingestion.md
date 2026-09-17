@@ -49,6 +49,18 @@ migrated Postgres instance.
    filename stem as the title and `"Unknown Artist"`. Tags are never
    trusted for anything beyond display metadata (parameterized queries
    only — see `ingestion.py`).
+4a. **Artwork**: embedded cover art (ID3 APIC, MP4 `covr`, or FLAC
+   `.pictures` — whichever the file actually has) is extracted and
+   written to `ARTWORK_DIR/{sha256}.{jpg,png}`, named by the source
+   file's content hash rather than the song id so it can be produced
+   *before* the song row exists. `songs.artwork_url` is set to
+   `/artwork/{sha256}.{ext}`, which `GET /artwork/*` on the backend serves
+   back out (see [api.md](api.md)) — both processes must be configured
+   with the same `ARTWORK_DIR` (a shared Docker volume in docker-compose;
+   literally the same directory when running without Docker — `make
+   dev-local` and `make ingest` both resolve it to the same absolute path
+   automatically). Files with no embedded artwork simply get `artwork_url
+   = null`; this never fails ingestion of the audio/fingerprints.
 5. **Fingerprint**: the same `generate_fingerprints` reference
    implementation used everywhere else (see
    [fingerprinting.md](fingerprinting.md)).
@@ -105,12 +117,27 @@ of where it enters the system.
 make migrate
 
 # Ingest a directory you own the rights to
-DATABASE_URL=postgresql://postgres:devpass@localhost:5432/loony_shazam \
-  music-fingerprint ingest ~/Music/MyLicensedCatalog
+make ingest MUSIC_DIR=~/Music/MyLicensedCatalog
 
 # Verify
 psql $DATABASE_URL -c "SELECT count(*) FROM songs;"
 psql $DATABASE_URL -c "SELECT count(*) FROM fingerprints;"
+psql $DATABASE_URL -c "SELECT count(*) FROM songs WHERE artwork_url IS NOT NULL;"
+```
+
+### Backfilling artwork for an already-ingested catalog
+
+Ingestion is idempotent by design (§2 above) — re-running `ingest` over a
+directory you've already ingested does nothing, since every file is
+already recorded in `ingested_sources`. That's exactly right for
+fingerprints (you never want to redo that work), but it means a catalog
+ingested *before* artwork extraction existed would otherwise never get
+artwork. `backfill-artwork` is the metadata-only complement: it matches
+files to already-ingested songs by the same content hash, and updates
+only `artwork_url` — it never touches fingerprints.
+
+```bash
+make backfill-artwork MUSIC_DIR=~/Music/MyLicensedCatalog
 ```
 
 For local development/testing without any real audio files, generate a

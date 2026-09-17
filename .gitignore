@@ -8,7 +8,7 @@
 
 # Python
 processor/.venv/
-processor/**/__pycache__/
+**/__pycache__/
 processor/**/*.pyc
 processor/.pytest_cache/
 processor/.ruff_cache/
@@ -42,6 +42,10 @@ android/.cxx/
 # Local (non-Docker) run state: pid files and logs from
 # scripts/dev/run_local.sh
 /.run/
+
+# Extracted cover art (regenerated from your own audio files at ingestion
+# time — never something to commit, see ARTWORK_DIR in .env.example)
+/data/artwork/
 
 # Misc
 *.log
