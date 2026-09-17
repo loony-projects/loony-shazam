@@ -43,10 +43,16 @@ without a real microphone, real network, or Robolectric:
   both ViewModels depend on the interface; tests substitute
   `FakeRecognitionRepository`.
 
-`MusicProvider` (`data/MusicProvider.kt`) is a deliberate extensibility
-seam for a future "open in Spotify/Apple Music" deep link. The shipped
-implementation (`NoOpMusicProvider`) always returns `null` - no real
-provider credentials or API calls are wired up.
+`MusicProvider` (`data/MusicProvider.kt`) is an extensibility interface
+for "open this song externally". The shipped implementation
+(`WebSearchMusicProvider`) opens a YouTube Music search for the
+recognized title + artist — a plain `https://` URL needs no API key or
+app-specific credentials (unlike a real Spotify/Apple Music integration,
+which this project deliberately doesn't attempt — see product spec), and
+Android resolves it to the YouTube Music app automatically if it's
+installed, or a browser otherwise. It always returns a usable `Intent`;
+the interface stays nullable so a future provider can express "genuinely
+unsupported for this song" if one is ever added.
 
 ## State machine
 
@@ -261,20 +267,34 @@ Run with `./gradlew test` (JVM unit tests, no emulator/device required):
   `FakeRecognitionRepository`, using Turbine to assert the exact sequence
   of `StateFlow` emissions.
 
+## Artwork
+
+`song.artworkUrl` on the wire is a path *relative to the backend*
+(e.g. `/artwork/<sha256>.png`, served by a static file route — see
+docs/api.md), not a fully-qualified URL, because the same image is
+reachable at a different absolute address in debug
+(`http://localhost:8080/...` via `adb reverse`) versus a real deployment.
+`resolveArtworkUrl()` in `data/repository/RecognitionRepository.kt`
+resolves it against `BuildConfig.BASE_URL` once, at the DTO→domain
+boundary — every downstream consumer (the result screen, Room history)
+only ever sees a ready-to-load absolute URL. Coil (`AsyncImage`) loads it
+with default caching/sizing — no custom cache size, placeholder
+crossfade, or request-level tuning has been applied.
+
 ## Known limitations / reviewer notes
 
-- No instrumented (`androidTest`) UI tests - no emulator/device was
-  available in the build environment used for this project. All screens
-  are exercised only via the compiler (Compose preview functions were not
-  added) and the unit tests above cover the ViewModel/repository/audio
-  logic underneath them.
-- Coil (`AsyncImage`) is used for artwork with default caching/sizing - no
-  custom cache size, placeholder crossfade, or request-level tuning has
-  been applied.
-- `MusicProvider` is a real interface with a wired-up call site in both
-  `ResultScreen` and `HistoryDetailScreen`, but its only implementation
-  (`NoOpMusicProvider`) always returns `null` - the "Open in music app"
-  button is present but disabled until a real provider is implemented.
+- No instrumented (`androidTest`) UI tests. A real physical device *was*
+  used to verify the app installs, launches without crashing, and
+  performs real recognitions end to end (see
+  `scripts/dev/install_android.sh`) — but that was manual verification,
+  not an automated instrumented test suite. Screens themselves are
+  exercised only via the compiler (Compose preview functions were not
+  added); the unit tests cover the ViewModel/repository/audio logic
+  underneath them, plus `WebSearchMusicProviderTest` and
+  `ArtworkUrlResolverTest` (the latter two using Robolectric — already a
+  test dependency — pinned to `@Config(sdk = [34])` since Robolectric
+  4.13's newest supported simulated platform trails this project's
+  `targetSdk = 35`).
 - The release `BASE_URL` (`https://api.example.com/`) is an intentional
   placeholder and must be replaced before any real release build.
 - History has no delete/clear action yet - entries accumulate

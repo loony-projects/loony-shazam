@@ -5,7 +5,7 @@ import androidx.room.Room
 import com.google.gson.Gson
 import com.loonyshazam.app.audio.AudioRecorder
 import com.loonyshazam.app.data.MusicProvider
-import com.loonyshazam.app.data.NoOpMusicProvider
+import com.loonyshazam.app.data.WebSearchMusicProvider
 import com.loonyshazam.app.data.db.HistoryDatabase
 import com.loonyshazam.app.data.network.RecognitionApi
 import com.loonyshazam.app.data.repository.DefaultRecognitionRepository
@@ -65,7 +65,7 @@ class AppContainer(app: Application) {
 
     val audioRecorder: AudioRecorder by lazy { AudioRecorder(appContext) }
 
-    val musicProvider: MusicProvider by lazy { NoOpMusicProvider() }
+    val musicProvider: MusicProvider by lazy { WebSearchMusicProvider() }
 }
 
 class LoonyShazamApp : Application() {

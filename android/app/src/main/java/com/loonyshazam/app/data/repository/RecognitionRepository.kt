@@ -1,6 +1,7 @@
 package com.loonyshazam.app.data.repository
 
 import com.google.gson.Gson
+import com.loonyshazam.app.BuildConfig
 import com.loonyshazam.app.data.db.HistoryDao
 import com.loonyshazam.app.data.db.HistoryEntity
 import com.loonyshazam.app.data.model.MatchInfo
@@ -123,11 +124,29 @@ private fun RecognitionResponseDto.toDomain(): RecognitionOutcome {
                 artist = song.artist,
                 album = song.album,
                 durationMs = song.durationMs,
-                artworkUrl = song.artworkUrl
+                artworkUrl = resolveArtworkUrl(song.artworkUrl)
             ),
             match = matchInfo
         )
     } else {
         RecognitionOutcome.NotRecognized(reason = reason ?: "NO_MATCH", match = matchInfo)
     }
+}
+
+/**
+ * The backend returns `artwork_url` as a path relative to itself (e.g.
+ * `/artwork/<hash>.jpg`, served by a static file route — see
+ * docs/api.md), not a fully-qualified URL: the same image is reachable at
+ * a different absolute address in debug (`http://localhost:8080/...` via
+ * `adb reverse`) versus a real deployment, so baking in one absolute URL
+ * server-side would break the other build type. Resolve it against
+ * [BuildConfig.BASE_URL] once here, at the DTO→domain boundary, so every
+ * downstream consumer (the result screen, Room history) only ever sees a
+ * ready-to-load absolute URL. Already-absolute values (e.g. a future
+ * provider returning a real CDN URL) pass through unchanged.
+ */
+internal fun resolveArtworkUrl(artworkUrl: String?): String? {
+    if (artworkUrl == null) return null
+    if (artworkUrl.startsWith("http://") || artworkUrl.startsWith("https://")) return artworkUrl
+    return BuildConfig.BASE_URL.trimEnd('/') + "/" + artworkUrl.trimStart('/')
 }
