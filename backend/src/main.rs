@@ -32,6 +32,8 @@ async fn main() -> anyhow::Result<()> {
     storage::run_migrations(&db).await?;
     tracing::info!("database migrations applied");
 
+    std::fs::create_dir_all(&config.artwork_dir)?;
+
     let redis = RedisCache::connect(config.redis_url.as_deref()).await;
 
     let processor = ProcessorClient::new(config.processor_url.clone(), config.processor_timeout)?;

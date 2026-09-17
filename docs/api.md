@@ -61,7 +61,7 @@ Recognized:
     "artist": "Test Artist",
     "album": null,
     "duration_ms": 20000,
-    "artwork_url": null
+    "artwork_url": "/artwork/4c28129ea074a2af101310bb173015991b1f4452c29006e026e00dec55afc8a8.png"
   },
   "match": {
     "score": 119.46,
@@ -88,7 +88,11 @@ an error):
 
 See [fingerprinting.md](fingerprinting.md) "Scoring" for what `score` and
 `confidence` do and don't mean. `song.id` is a string (stringified
-internal ID).
+internal ID). `song.artwork_url`, when present, is a path **relative to
+this backend** (served by `GET /artwork/{filename}`, see below) — clients
+resolve it against whatever base URL they're already using to reach the
+API, not treat it as a fully-qualified URL. It's `null` when the source
+file had no embedded cover art.
 
 Errors: `422 MISSING_AUDIO` / `INVALID_AUDIO` / `PROCESSOR_REJECTED`,
 `413 AUDIO_TOO_LARGE`, `502 PROCESSOR_UNAVAILABLE`, `409
@@ -141,6 +145,14 @@ Retrieves a previously-recorded recognition attempt from the audit log
 `404 SONG_NOT_FOUND` if the ID doesn't exist. `400 BAD_REQUEST` for a
 non-positive/malformed ID. Backed by an optional Redis cache (5 minute
 TTL) — transparent to the caller either way.
+
+### `GET /artwork/{filename}`
+Serves extracted cover art as a static file (content-addressed by the
+source audio file's SHA-256, so the filename itself carries no song
+identity — see [ingestion.md](ingestion.md)). Not an `/api/v1/*` route —
+it's a plain static file server (`ARTWORK_DIR`, see `.env.example`), so
+there's no JSON envelope, just the image bytes with an inferred
+content type. `404` if the file doesn't exist.
 
 ## Admin endpoints
 

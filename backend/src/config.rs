@@ -4,6 +4,7 @@
 //! place (mirrors the approach taken in `processor/config.py`).
 
 use std::env;
+use std::path::PathBuf;
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -32,6 +33,13 @@ pub struct AppConfig {
 
     pub rate_limit_requests_per_minute: u32,
     pub rate_limit_burst: u32,
+
+    /// Directory the ingestion CLI writes extracted cover art into (see
+    /// processor/src/music_fingerprint/ingestion.py) and this backend
+    /// serves back out at `GET /artwork/*`. Both processes must agree on
+    /// the same path — a shared Docker volume in docker-compose, or
+    /// literally the same directory on disk when running without Docker.
+    pub artwork_dir: PathBuf,
 
     pub matching: MatchingConfig,
 }
@@ -95,6 +103,8 @@ impl AppConfig {
         let rate_limit_requests_per_minute = parse_env("RATE_LIMIT_RPM", 60u32)?;
         let rate_limit_burst = parse_env("RATE_LIMIT_BURST", 10u32)?;
 
+        let artwork_dir = parse_env("ARTWORK_DIR", PathBuf::from("./data/artwork"))?;
+
         let matching = MatchingConfig {
             offset_bucket_ms: parse_env("MATCH_OFFSET_BUCKET_MS", 100i64)?,
             min_dominant_votes: parse_env("MATCH_MIN_DOMINANT_VOTES", 5u32)?,
@@ -117,6 +127,7 @@ impl AppConfig {
             admin_api_key,
             rate_limit_requests_per_minute,
             rate_limit_burst,
+            artwork_dir,
             matching,
         })
     }

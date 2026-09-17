@@ -70,6 +70,11 @@ pub async fn test_app_state(pool: PgPool, matching: MatchingConfig) -> AppState 
         admin_api_key: Some("test-admin-key".to_string()),
         rate_limit_requests_per_minute: 100_000,
         rate_limit_burst: 100_000,
+        artwork_dir: {
+            let dir = std::env::temp_dir().join("loony-shazam-test-artwork");
+            std::fs::create_dir_all(&dir).expect("create test artwork dir");
+            dir
+        },
         matching,
     });
 

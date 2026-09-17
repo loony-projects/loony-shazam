@@ -12,6 +12,7 @@ use axum::response::Response;
 use axum::routing::{delete, get, post};
 use axum::Router;
 use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
@@ -51,6 +52,11 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/songs/:id", get(song_handler::get_song))
         .merge(recognition_audio_routes)
         .merge(admin_routes)
+        // Extracted cover art (see processor's ingestion.py) — public,
+        // static, content-addressed by filename, no auth needed. Served
+        // through the same rate limiter as everything else in this group
+        // as basic protection against directory-scanning abuse.
+        .nest_service("/artwork", ServeDir::new(&state.config.artwork_dir))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             rate_limit::rate_limit_middleware,

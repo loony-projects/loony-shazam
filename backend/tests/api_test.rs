@@ -357,6 +357,53 @@ async fn get_unknown_recognition_returns_404() {
 }
 
 #[tokio::test]
+async fn artwork_route_serves_files_from_the_configured_directory() {
+    let pool = common::setup_test_db().await;
+    let state = common::test_app_state(pool, MatchingConfig::default()).await;
+    let artwork_dir = state.config.artwork_dir.clone();
+    std::fs::write(
+        artwork_dir.join("test-cover.jpg"),
+        b"not a real jpeg, just bytes",
+    )
+    .unwrap();
+
+    let app = loony_shazam_backend::routes::build_router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/artwork/test-cover.jpg")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(&bytes[..], b"not a real jpeg, just bytes");
+}
+
+#[tokio::test]
+async fn artwork_route_404s_for_unknown_file() {
+    let pool = common::setup_test_db().await;
+    let state = common::test_app_state(pool, MatchingConfig::default()).await;
+    let app = loony_shazam_backend::routes::build_router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/artwork/does-not-exist.jpg")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn malformed_json_body_is_rejected() {
     let pool = common::setup_test_db().await;
     let state = common::test_app_state(pool, MatchingConfig::default()).await;
