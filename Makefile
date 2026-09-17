@@ -1,5 +1,6 @@
 .PHONY: dev dev-down dev-local dev-local-stop dev-local-logs test test-backend test-processor \
-	lint lint-backend lint-processor ingest benchmark e2e fmt migrate
+	lint lint-backend lint-processor ingest benchmark e2e fmt migrate \
+	install-android uninstall-android
 
 # Start the full backend stack (postgres, redis, processor, backend) via Docker Compose.
 dev:
@@ -62,3 +63,12 @@ benchmark:
 
 e2e:
 	scripts/dev/run_e2e.sh
+
+# Build, install (adb reverse'd to a local backend), and launch the debug
+# app on a connected device or emulator. See scripts/dev/install_android.sh
+# --help for flags (e.g. --device <id> with multiple devices attached).
+install-android:
+	scripts/dev/install_android.sh
+
+uninstall-android:
+	scripts/dev/uninstall_android.sh

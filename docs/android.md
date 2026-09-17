@@ -154,9 +154,11 @@ responses come back as HTTP 200, distinguished by the `recognized` field.
 Base URL is injected via `buildConfigField` per build type
 (`android/app/build.gradle.kts`), never hardcoded in Kotlin source:
 
-- **debug**: `http://10.0.2.2:8080/` - the standard Android emulator alias
-  for the host machine's `localhost`, where `docker compose` / the local
-  dev backend listens.
+- **debug**: `http://localhost:8080/`, reached via `adb reverse tcp:8080
+  tcp:8080` (see "Pointing the debug build at a local backend" below) —
+  this works uniformly for a real device over USB and an emulator alike,
+  unlike the older `10.0.2.2` NAT alias, which only resolves inside a
+  standard AVD and does nothing on physical hardware.
 - **release**: `https://api.example.com/` - an explicit placeholder. This
   is **not** a real, deployed domain; a real release build must override it
   with the actual production API host before shipping.
@@ -196,8 +198,28 @@ echo "sdk.dir=/path/to/Android/Sdk" > local.properties   # gitignored, create lo
 
 ### Pointing the debug build at a local backend
 
-The debug build already targets `http://10.0.2.2:8080/`, which is the
-Android emulator's alias for the host's `localhost`. So:
+The debug build targets `http://localhost:8080/` — meaning the device's
+*own* `localhost`, not this machine's. Reaching the actual backend needs
+`adb reverse tcp:8080 tcp:8080`, which forwards the device's
+`localhost:8080` to this machine's `localhost:8080` over the adb
+connection (USB for a real device, the emulator's own adb link for an
+AVD — the same command works for both, which is the whole point of using
+it instead of the old `10.0.2.2` NAT alias that only ever worked for
+emulators).
+
+`scripts/dev/install_android.sh` (`make install-android`) does all of
+this for you:
+```bash
+make dev            # or make dev-local — get the backend running first
+make install-android
+```
+It builds the debug APK, confirms exactly one device/emulator is
+attached (or takes `--device <id>` when more than one is), runs `adb
+reverse`, warns (without failing) if the backend isn't actually
+responding yet, installs with `-r` (safe to re-run — reinstalls over
+itself), and launches the app. `--no-build` skips the Gradle build if you
+already have a fresh APK; `--no-launch` installs without opening it.
+`scripts/dev/uninstall_android.sh` (`make uninstall-android`) removes it.
 
 > **Cleartext HTTP note**: since `targetSdk >= 28`, Android blocks plain
 > HTTP traffic by default — without an exception, the debug build would
@@ -206,19 +228,16 @@ Android emulator's alias for the host's `localhost`. So:
 > since JVM unit tests don't enforce Android's network security policy).
 > `app/src/debug/res/xml/network_security_config.xml` +
 > `app/src/debug/AndroidManifest.xml` grant a narrow cleartext exception
-> for `10.0.2.2`/`localhost`/`127.0.0.1` in **debug builds only** — this
+> for `localhost`/`127.0.0.1`/`10.0.2.2` in **debug builds only** — this
 > debug-only source set is never merged into a release build, which keeps
 > the platform default of requiring HTTPS everywhere.
 
-1. Start the backend stack from the repo root: `docker compose up` (or
-   `make dev`, see the root `Makefile`) - this brings up `postgres`,
-   `redis`, `processor`, and `backend` on `localhost:8080`.
-2. Install `app-debug.apk` on an emulator (a physical device instead needs
-   `BASE_URL` pointed at the host's real LAN IP, since `10.0.2.2` only
-   resolves inside the emulator) and run it - no further configuration
-   needed.
+**Caveat**: `adb reverse` rules don't persist across a device reboot or
+USB reconnect — re-run `make install-android` (or just `adb reverse
+tcp:8080 tcp:8080`) if recognition calls start failing after either.
 
-To point at a different host, change the `debug` block's
+To point at a different host entirely (e.g. a real deployed backend
+instead of a local one), change the `debug` block's
 `buildConfigField("String", "BASE_URL", ...)` in `app/build.gradle.kts`.
 
 ## Tests

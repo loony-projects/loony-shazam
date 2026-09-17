@@ -118,13 +118,16 @@ cargo run
 ```
 
 ### Android app
-See [docs/android.md](docs/android.md). Short version:
+See [docs/android.md](docs/android.md). Short version — with a device
+connected (USB debugging on) or an emulator running, and the backend
+already up (`make dev` / `make dev-local`):
 ```bash
-cd android
-./gradlew assembleDebug
+make install-android    # builds, adb reverse's to the backend, installs, launches
 ```
-Point the debug build at `http://10.0.2.2:8080/` (the emulator's alias for
-your host machine) to reach a locally running backend.
+The debug build talks to `http://localhost:8080/` on the device, forwarded
+to this machine via `adb reverse` — that's what `install-android` sets up
+automatically. Re-run it (or just `adb reverse tcp:8080 tcp:8080`) if the
+device reboots or reconnects. `make uninstall-android` removes it.
 
 ## 5. Ingesting music
 
@@ -187,8 +190,9 @@ hardcoded, nothing is committed as a real secret.
 - **`cargo build` fails on an old Rust toolchain**: the Cargo.lock in this
   repo may resolve crates requiring a fairly recent stable Rust (edition
   2024 dependencies); update your toolchain (`rustup update stable`).
-- **Android emulator can't reach the backend**: use `10.0.2.2`, not
-  `localhost`, from inside the emulator.
+- **Android app can't reach the backend / recognition always errors out**:
+  `adb reverse` rules don't survive a device reboot or USB reconnect —
+  re-run `make install-android` (or just `adb reverse tcp:8080 tcp:8080`).
 - **`make dev-local` fails at "could not connect using DATABASE_URL"**:
   Postgres isn't reachable at the host/port/credentials in `.env` — the
   script doesn't start Postgres for you (unlike `make dev`, which

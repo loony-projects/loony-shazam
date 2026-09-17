@@ -28,9 +28,15 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
-            // Standard Android emulator alias for the host machine's localhost,
-            // where `docker compose` / the local dev backend listens on :8080.
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
+            // "localhost" here relies on `adb reverse tcp:8080 tcp:8080`
+            // (see scripts/dev/install_android.sh) forwarding the device's
+            // own localhost:8080 to the host machine's localhost:8080 over
+            // the adb/USB connection. This works uniformly for a physical
+            // device AND an emulator (adb reverse isn't emulator-specific),
+            // unlike the older 10.0.2.2 NAT alias, which only resolves
+            // inside a standard AVD and does nothing on a real device. See
+            // docs/android.md "Pointing the debug build at a local backend".
+            buildConfigField("String", "BASE_URL", "\"http://localhost:8080/\"")
         }
         release {
             isMinifyEnabled = true
